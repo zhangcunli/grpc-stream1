@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package streammsg;
+option go_package = "proto/streammsg";
+
+message StreamReq {
+  string user = 1;
+  string text = 2;
+  string message = 3;
+}
+
+message StreamResp {
+  string user = 1;
+  string text = 2;
+  string message = 3;
+}
+
+/*
+protoc -I . \
+--go_out=. --go_opt paths=source_relative \
+--go-grpc_out=. --go-grpc_opt paths=source_relative \
+proto/streammsg/streammsg.proto
+*/
