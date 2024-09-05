@@ -22,7 +22,7 @@ func (s *chatServer) Chat(stream chatservice.ChatService_ChatServer) error {
 	// 从 context 中读取元数据
 	md, ok := metadata.FromIncomingContext(stream.Context())
 	if ok {
-		k := strings.ToLower("fusionContext")
+		k := strings.ToLower("customContext")
 		values, exist := md[k]
 		if exist {
 			value := values[0]

@@ -15,58 +15,15 @@ import (
 )
 
 func main() {
-	serverAddr := "localhost:50051"
-	grpcStreamTest1(serverAddr)
+	//commonClient("localhost:50051") //test1
+	genericStream1("localhost:50051") //test2
+	//genericStream2("localhost:50051") //test3
 }
 
-type CustomContext struct {
-	ClientInfo ClientInfo `json:"clientInfo"`
-	RequestInfo RequestInfo `json:"requestInfo"`
-}
-
-type ClientInfo struct {
-	ClientId *string `json:"clientId,omitempty"`
-	BizType  *int    `json:"bizType,omitempty"`
-	AppId    *int    `json:"appId,omitempty"`
-}
-
-type RequestInfo struct {
-	Lang          string             `json:"lang"`
-	NeutralDomain bool               `json:"neutralDomain"`
-	BizData       *map[string]string `json:"bizData,omitempty"`
-}
-
-func newFusionContext() *CustomContext {
-	clientId := "clientId_0001"
-	bizType := 10
-	clientInfo := ClientInfo{
-		ClientId: &clientId,
-		BizType:  &bizType,
-	}
-
-	bizData := map[string]string{
-		"key1": "value1",
-		"key2": "value2",
-	}
-	requestInfo := RequestInfo{
-		Lang:          "zh",
-		NeutralDomain: true,
-		BizData:       &bizData,
-	}
-	customContext := CustomContext{
-		ClientInfo:  clientInfo,
-		RequestInfo: requestInfo,
-	}
-
-	return &customContext
-}
-
-func grpcStreamTest1(serverAddr string) {
+//仅依赖 streammsg.pb.go，使用了protoc 生成的消息体结构
+func genericStream1(serverAddr string) {
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	//cp := grpc.ConnectParams{}
-	//grpc.WithConnectParams(cp)
-	//	grpc.WithChainStreamInterceptor()
 	client, err := grpc.NewClient(serverAddr, opts...)
 	if err != nil {
 		fmt.Printf(">>>grpc NewClient failed, err:%s\n", err)
@@ -75,8 +32,8 @@ func grpcStreamTest1(serverAddr string) {
 	defer client.Close()
 
 	client.Connect()
-	customContext, _ := json.Marshal(newFusionContext())
-	md := metadata.Pairs("customContext", string(customContext))
+	fusionContext, _ := json.Marshal(newFusionContext())
+	md := metadata.Pairs("customContext", string(fusionContext))
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
 
 	streamDesc := &grpc.StreamDesc{
@@ -133,3 +90,46 @@ func grpcStreamTest1(serverAddr string) {
 	<-waitc
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////
+// 自定义上下文
+type CustomContext struct {
+	ClientInfo  ClientInfo  `json:"clientInfo"`
+	RequestInfo RequestInfo `json:"requestInfo"`
+}
+
+type ClientInfo struct {
+	ClientId *string `json:"clientId,omitempty"`
+	BizType  *int    `json:"bizType,omitempty"`
+	AppId    *int    `json:"appId,omitempty"`
+}
+
+type RequestInfo struct {
+	Lang          string             `json:"lang"`
+	NeutralDomain bool               `json:"neutralDomain"`
+	BizData       *map[string]string `json:"bizData,omitempty"`
+}
+
+func newFusionContext() *CustomContext {
+	clientId := "clientId_0001"
+	bizType := 10
+	clientInfo := ClientInfo{
+		ClientId: &clientId,
+		BizType:  &bizType,
+	}
+
+	bizData := map[string]string{
+		"key1": "value1",
+		"key2": "value2",
+	}
+	requestInfo := RequestInfo{
+		Lang:          "zh",
+		NeutralDomain: true,
+		BizData:       &bizData,
+	}
+	customContext := CustomContext{
+		ClientInfo:  clientInfo,
+		RequestInfo: requestInfo,
+	}
+
+	return &customContext
+}
